@@ -38,6 +38,10 @@ function addDragEvents() {
         square.addEventListener('dragover', e => e.preventDefault());
         square.addEventListener('dragenter', e => e.preventDefault());
         square.addEventListener('drop', dragDrop);
+        // Touch events for mobile
+        square.addEventListener('touchstart', touchStart, { passive: false });
+        square.addEventListener('touchmove', touchMove, { passive: false });
+        square.addEventListener('touchend', touchEnd, { passive: false });
     });
 }
 
@@ -158,3 +162,45 @@ function gameLoop() {
 createBoard();
 addDragEvents();
 gameLoop();
+
+let touchStartIdx = null;
+let touchMoved = false;
+
+function getSquareIdxFromTouch(e) {
+    const touch = e.touches[0] || e.changedTouches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (el && el.classList.contains('candy')) {
+        return parseInt(el.id);
+    }
+    return null;
+}
+
+function touchStart(e) {
+    e.preventDefault();
+    touchMoved = false;
+    touchStartIdx = parseInt(this.id);
+}
+
+function touchMove(e) {
+    touchMoved = true;
+    e.preventDefault();
+}
+
+function touchEnd(e) {
+    e.preventDefault();
+    if (!touchMoved) return;
+    const endIdx = getSquareIdxFromTouch(e);
+    if (endIdx !== null && touchStartIdx !== null) {
+        const validMoves = [
+            touchStartIdx - 1,
+            touchStartIdx + 1,
+            touchStartIdx - width,
+            touchStartIdx + width
+        ];
+        if (validMoves.includes(endIdx)) {
+            swapCandyWithAnimation(touchStartIdx, endIdx);
+        }
+    }
+    touchStartIdx = null;
+    touchMoved = false;
+}
